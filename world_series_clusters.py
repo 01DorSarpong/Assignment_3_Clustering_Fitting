@@ -159,7 +159,7 @@ plt.scatter(xkmeans, ykmeans, 45, "y", marker="+", label="original centers")
 
 plt.xlabel('Access to Electricity')
 plt.ylabel('Life Expectancy')
-plt.legend(facecolor='lightgrey')
+plt.legend()
 plt.title('2018 Cluster graph of Access to Electricity and Life Expectancy',
           fontweight='bold', fontsize=10)
 plt.show()
@@ -177,7 +177,7 @@ plt.scatter(xkmeans2, ykmeans, 45, "y", marker="+", label="original centers")
 
 plt.xlabel('Access to Electricity')
 plt.ylabel('Life Expectancy')
-plt.legend(facecolor='lightgrey')
+plt.legend()
 plt.title('2008 Cluster graph of Access to Electricity and Life Expectancy',
           fontweight='bold', fontsize=10)
 plt.show()
@@ -232,12 +232,14 @@ param2, covar2 = opt.curve_fit(exponential, bangladesh_data['Year'],
                               p0=(1.02e12, 0.03))
 
 bangladesh_data["fit"] = exponential(bangladesh_data["Year"], *param2)
-plt.figure(facecolor='lightgrey')
+plt.figure()
 bangladesh_data.plot("Year", ["Access to electricity (% of population)", "fit"])
 
 plt.title('Fitted Graph of Access to Electricity for Bangladesh',
           fontweight='bold', fontsize=10)
-plt.legend(facecolor='lightgrey')
+plt.xlabel("year")
+plt.ylabel("Access to electricity")
+plt.legend()
 plt.show()
 
 # plotting the fitting graph for China
@@ -250,7 +252,7 @@ china_data.plot("Year", ["Access to electricity (% of population)", "fit"])
 plt.show()
 
 # forecasting the data for the next 20 years
-forecast_years = np.linspace(1991, 2050, 100)
+forecast_years = np.linspace(1991, 2040, 100)
 forecast_values1 = exponential(forecast_years, *param1)
 forecast_values2 = exponential(forecast_years, *param2)
 
@@ -265,7 +267,7 @@ up2 = forecast_values2 + sigma2
 low2 = forecast_values2 - sigma2
 
 #plotting forecast data for Bangladesh
-plt.figure(facecolor='lightgrey')
+plt.figure()
 plt.plot(bangladesh_data["Year"], bangladesh_data["Access to electricity (% of population)"],
          label="Original fit-Access to electricity")
 plt.plot(forecast_years, forecast_values2, label="Forecasted fit")
@@ -275,9 +277,9 @@ plt.fill_between(forecast_years, low2, up2, color="yellow", alpha=0.7,
 
 plt.xlabel("year")
 plt.ylabel("Access to electricity")
-plt.title('2050 Forecast of Access to Electricity for Bangladesh',
+plt.title('2040 Forecast of Access to Electricity for Bangladesh',
           fontweight='bold', fontsize=10)
-plt.legend(facecolor='lightgrey')
+plt.legend()
 
 #plotting forecast data for Algeria
 plt.figure(facecolor='lightgrey')
@@ -296,7 +298,7 @@ plt.legend(facecolor='lightgrey')
 plt.show()
 
 
-"""
+
 
 # do a subplot of top 10 GNI, Labor force and Exports
 
@@ -304,14 +306,33 @@ plt.show()
 top10_GNI=df1_2018['GNI (current US$)'].sort_values(ascending=False)[0:10]
 top10_Elec=df1_2018['Life expectancy at birth, total (years)'].sort_values(ascending=False)[0:10]
 plt.figure(figsize=(15,5))
-plt.plot(top10_GNI.index,top10_GNI.values)
-plt.plot(top10_Elec.index,top10_Elec.values)
-plt.title('Top 10 GNI Countries')
+plt.pie(top10_GNI.values)
+
+countries = ['United States', 'China', 'Japan', 'Germany', 'France', 'United Kingdom', 'India', 'Italy', 'Brazil', 'Korea, Rep.']
+china_index = countries.index('China')
+
+# Exploding China
+explode = [0] * len(countries)
+explode[china_index] = 0.1  # Explode China
+
+# Cool color theme
+#colors = plt.cm.coolwarm(range(len(countries)))
+
+# Plotting the pie chart
+plt.figure(figsize=(8, 6))
+plt.pie(top10_GNI.values, labels=countries, autopct='%1.1f%%', startangle=140, 
+        explode=explode,  shadow=True)
+plt.title('GNI Distribution of Top10 Countrries in 2018', fontweight='bold', 
+          fontsize=10)
 plt.show()
 
-top10_labour=df1_2015['Exports of goods and services (current LCU)'].sort_values(ascending=False)[0:10]
+plt.plot(top10_Elec.index,top10_Elec.values)
+plt.title('Top 10 GNI Countries', fontweight='bold', fontsize=10)
+plt.show()
+
+top10_exports=df1_2018['Exports of goods and services (current LCU)'].sort_values(ascending=False)[0:10]
+top10_labor=df1_2018['Labor force, total'].sort_values(ascending=False)[0:10]
 plt.figure(figsize=(15,5))
-plt.plot(top10_labour.index,top10_labour.values)
+#plt.plot(top10_labour.index,top10_labour.values)
 plt.title('Top 10 Exports Countries')
 plt.show()
-"""
