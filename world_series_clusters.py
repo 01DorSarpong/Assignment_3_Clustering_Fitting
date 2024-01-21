@@ -63,32 +63,47 @@ df1, df2 = read_data('cluster_series.csv')
 df1.replace('..', np.nan, inplace=True)
 #print(df1)
 
-# Running the pivot table for 2018
+# Running the pivot table for 2018 and 2008
 df1_2018 = pd.pivot_table(df1, values='2018', index='Country Name',
                               columns='Series Name')
-
+df1_2008 = pd.pivot_table(df1, values='2008', index='Country Name',
+                              columns='Series Name')
 # dropping nan values in data
 df1_2018 = df1_2018.dropna()  
-   
-data_corr = df1_2018.corr()
-print(data_corr)
+df1_2008 = df1_2008.dropna()
+
+#creating a correlation for the years 2010 and 2018
+data2018_corr = df1_2018.corr()
+df1_2008_corr = df1_2008.corr()
 
 plt.figure(figsize=(10, 8))
-sns.heatmap(data_corr, annot=True)
+sns.heatmap(data2018_corr, annot=True)
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(df1_2008_corr, annot=True)
 
 # Creating a scalar object
 scaler = pp.RobustScaler()
 
-df_cluster = df1_2018[['Access to electricity (% of population)', 
+df18_cluster = df1_2018[['Access to electricity (% of population)', 
+                       'Life expectancy at birth, total (years)']]
+df10_cluster = df1_2008[['Access to electricity (% of population)', 
                        'Life expectancy at birth, total (years)']]
 
-normalise_data = scaler.fit_transform(df_cluster)
+normalise18_data = scaler.fit_transform(df18_cluster)
+normalise10_data = scaler.fit_transform(df10_cluster)
 
 plt.figure(figsize=(8,8))
-plt.scatter(normalise_data[:,0], normalise_data[:, 1], 8, marker='o')
+plt.scatter(normalise18_data[:,0], normalise18_data[:, 1], 8, marker='o')
 
 plt.xlabel('Access to electricity')
 plt.ylabel('Life Expectancy')
+
+plt.figure(figsize=(8,8))
+plt.scatter(normalise10_data[:,0], normalise10_data[:, 1], 8, marker='o')
+
+plt.xlabel('Labour force, total')
+plt.ylabel('GNI (current US$)')
 
 plt.show()
 
@@ -102,66 +117,74 @@ for ic in range(2, 5):
 """
 
 #Setting up the cluster with expected clusters
-kmeans = cluster.KMeans(n_clusters=3, n_init=20, random_state=10)
-
+kmeans1 = cluster.KMeans(n_clusters=3, n_init=20, random_state=10)
+kmeans2 = cluster.KMeans(n_clusters=3, n_init=20, random_state=10)
 
 #Fit the data, results are stored in the kmeans object
-kmeans.fit(normalise_data) # fit done on x,y pairs
+kmeans1.fit(normalise18_data) # fit done on x,y pairs
+kmeans2.fit(normalise10_data) 
 
 # extract cluster labels
-labels = kmeans.labels_
-print(labels)
+labels1 = kmeans1.labels_
+labels2 = kmeans2.labels_
+print(labels1)
 
 
 #Add cluster labels to the original dataframe
-df_cluster['Cluster'] = labels
-#print(df_cluster.head(50))
-
-
+df18_cluster['Cluster'] = labels1
+df10_cluster['Cluster'] = labels2
 
 # extract the estimated cluster centres and convert to original scales
-cen = kmeans.cluster_centers_
-cen = scaler.inverse_transform(cen)
-xkmeans = cen[:, 0]
-ykmeans = cen[:, 1]
+cen1 = kmeans1.cluster_centers_
+cen1 = scaler.inverse_transform(cen1)
+xkmeans = cen1[:, 0]
+ykmeans = cen1[:, 1]
 
-# extract x and y values of data points
-x = df_cluster["Access to electricity (% of population)"]
-y = df_cluster["Life expectancy at birth, total (years)"]
-plt.figure(figsize=(8.0, 6.0))
+# extract the estimated cluster centres and convert to original scales
+cen2 = kmeans2.cluster_centers_
+cen2 = scaler.inverse_transform(cen2)
+xkmeans2 = cen2[:, 0]
+ykmeans2 = cen2[:, 1]
+
+# extract x and y values of 2018 data points
+x = df18_cluster["Access to electricity (% of population)"]
+y = df18_cluster["Life expectancy at birth, total (years)"]
+plt.figure(figsize=(8.0, 6.0), facecolor='lightgrey')
 
 # plot data with kmeans cluster number
-plt.scatter(x, y, 10, labels, marker="o", cmap='Paired')
+plt.scatter(x, y, 10, labels1, marker="o", cmap='Paired')
 # show cluster centres
 plt.scatter(xkmeans, ykmeans, 45, "k", marker="d", label='kmeans centers')
 plt.scatter(xkmeans, ykmeans, 45, "y", marker="+", label="original centers")
 
-plt.xlabel('Access to electricity')
+plt.xlabel('Access to Electricity')
 plt.ylabel('Life Expectancy')
-plt.legend()
+plt.legend(facecolor='lightgrey')
+plt.title('2018 Cluster graph of Access to Electricity and Life Expectancy',
+          fontweight='bold', fontsize=10)
 plt.show()
 
-"""
-# Selecting 3 countries in cluster 0 for fitting
-series_name = 'Access to electricity (% of population)'
+# extract x and y values of 2008 data points
+x2 = df10_cluster["Access to electricity (% of population)"]
+y2 = df10_cluster["Life expectancy at birth, total (years)"]
+plt.figure(figsize=(8.0, 6.0), facecolor='lightgrey')
 
-# Select data for the specified country and series for all years
-algeria_data = df1.loc[(df1['Country Name'] == 'Algeria') 
-                        & (df1['Series Name'] == series_name), :]
-bangladesh_data = df1.loc[(df1['Country Name'] == 'Bangladesh') 
-                        & (df1['Series Name'] == series_name), :]
-china_data = df1.loc[(df1['Country Name'] == 'China') 
-                        & (df1['Series Name'] == series_name), :]
-#storing all years in variable years
-years = df1.columns[2:]
-"""
+# plot data with kmeans cluster number
+plt.scatter(x2, y2, 10, labels2, marker="o", cmap='Paired')
+# show cluster centres
+plt.scatter(xkmeans2, ykmeans, 45, "k", marker="d", label='kmeans centers')
+plt.scatter(xkmeans2, ykmeans, 45, "y", marker="+", label="original centers")
+
+plt.xlabel('Access to Electricity')
+plt.ylabel('Life Expectancy')
+plt.legend(facecolor='lightgrey')
+plt.title('2008 Cluster graph of Access to Electricity and Life Expectancy',
+          fontweight='bold', fontsize=10)
+plt.show()
+
 
 df_fit = pd.read_csv('fitting_data.csv')
 years = df_fit.Year[0:30]
-
-
-
-print(df_fit)
 
 algeria_data = df_fit[(df_fit['Country Name'] == 'Algeria') & (df_fit['Series Name']
                                 == 'Access to electricity (% of population)')]
@@ -169,6 +192,8 @@ bangladesh_data = df_fit[(df_fit['Country Name'] == 'Bangladesh') & (df_fit['Ser
                                 == 'Access to electricity (% of population)')]
 china_data = df_fit[(df_fit['Country Name'] == 'China') & (df_fit['Series Name']
                                 == 'Access to electricity (% of population)')]
+
+#using exponential model for fitting
 def exponential(t, n0, g):
     """Calculates exponential function with scale factor n0 
     and growth rate g.
@@ -179,38 +204,46 @@ def exponential(t, n0, g):
 
     return f
 
+
 param1, covar = opt.curve_fit(exponential, algeria_data['Year'], 
                               algeria_data['Access to electricity (% of population)'])
 param2, covar = opt.curve_fit(exponential, bangladesh_data['Year'], 
                               bangladesh_data['Access to electricity (% of population)'])
 param3, covar = opt.curve_fit(exponential, china_data['Year'], 
                               china_data['Access to electricity (% of population)'])
-print("GDP 1990", param1[0]/1e9)
-print("growth rate", param1[1])
 
+
+# plotting the fitting graph for Algeria
 param1, covar1 = opt.curve_fit(exponential, algeria_data['Year'], 
                               algeria_data['Access to electricity (% of population)'],
-                              p0=(1.05e12, 0.791))
-#(1.2e12, 0.03)
+                              p0=(1.2e12, 0.03))
+
 
 algeria_data["fit"] = exponential(algeria_data["Year"], *param1)
 algeria_data.plot("Year", ["Access to electricity (% of population)", "fit"])
+plt.title(' Cluster graph of Access to Electricity and Life Expectancy for Algeria',
+          fontweight='bold', fontsize=10)
 plt.show()
 
 # plotting the fitting graph for Bangladesh
+
 param2, covar2 = opt.curve_fit(exponential, bangladesh_data['Year'], 
                               bangladesh_data['Access to electricity (% of population)'],
                               p0=(1.02e12, 0.03))
-#(1.2e12, 0.03)
 
 bangladesh_data["fit"] = exponential(bangladesh_data["Year"], *param2)
+plt.figure(facecolor='lightgrey')
 bangladesh_data.plot("Year", ["Access to electricity (% of population)", "fit"])
+
+plt.title('Fitted Graph of Access to Electricity for Bangladesh',
+          fontweight='bold', fontsize=10)
+plt.legend(facecolor='lightgrey')
 plt.show()
 
 # plotting the fitting graph for China
 param3, covar3 = opt.curve_fit(exponential, china_data['Year'], 
                               bangladesh_data['Access to electricity (% of population)'],
-                              p0=(1.2e12, 00.3))
+                              p0=(1.02e12, 0.99938511))
 
 china_data["fit"] = exponential(china_data["Year"], *param3)
 china_data.plot("Year", ["Access to electricity (% of population)", "fit"])
@@ -218,46 +251,61 @@ plt.show()
 
 # forecasting the data for the next 20 years
 forecast_years = np.linspace(1991, 2050, 100)
-forecast_values = exponential(forecast_years, *param2)
+forecast_values1 = exponential(forecast_years, *param1)
+forecast_values2 = exponential(forecast_years, *param2)
 
-# calculating the confidence intervals for new fit
-std_dev = np.sqrt(np.diag(covar2))
-print(std_dev)
+sigma1 = err.error_prop(forecast_values1, exponential, param1, covar1)
+sigma2 = err.error_prop(forecast_values2, exponential, param2, covar2)
 
-#confidence interval
-confidence_int = 0.868
 
-sigma = err.error_prop(forecast_years, exponential, param2, covar2)
+up1 = forecast_values1  
+low1 = forecast_values1 
 
-up = param2 + confidence_int *std_dev
-low = param2 - confidence_int *std_dev
+up2 = forecast_values2 + sigma2 
+low2 = forecast_values2 - sigma2
 
-#plt.fill_between(forecast_years, low, up, color="yellow", alpha=0.7)
-
-plt.figure()
-
-plt.fill_between(forecast_years, exponential(forecast_years, low), 
-           exponential(forecast_years, up, g='some_val'), color="green", alpha=0.5,
-           label = 'confidence interval')
-
+#plotting forecast data for Bangladesh
+plt.figure(facecolor='lightgrey')
 plt.plot(bangladesh_data["Year"], bangladesh_data["Access to electricity (% of population)"],
          label="Original fit-Access to electricity")
-plt.plot(forecast_years, forecast_values, label="Forecasted fit")
+plt.plot(forecast_years, forecast_values2, label="Forecasted fit")
+
+plt.fill_between(forecast_years, low2, up2, color="yellow", alpha=0.7, 
+                  label = 'confidence interval')
 
 plt.xlabel("year")
 plt.ylabel("Access to electricity")
-plt.legend()
+plt.title('2050 Forecast of Access to Electricity for Bangladesh',
+          fontweight='bold', fontsize=10)
+plt.legend(facecolor='lightgrey')
+
+#plotting forecast data for Algeria
+plt.figure(facecolor='lightgrey')
+plt.plot(algeria_data["Year"], algeria_data["Access to electricity (% of population)"],
+         label="Original fit-Access to electricity")
+plt.plot(forecast_years, forecast_values1, label="Forecasted fit")
+
+plt.fill_between(forecast_years, low1, up1, color="yellow", alpha=0.7, 
+                  label = 'confidence interval')
+
+plt.xlabel("year")
+plt.ylabel("Access to electricity")
+plt.title('2050 Forecast of Access to Electricity for Algeria',
+          fontweight='bold', fontsize=10)
+plt.legend(facecolor='lightgrey')
 plt.show()
 
 
-
-
-
 """
+
+# do a subplot of top 10 GNI, Labor force and Exports
+
 #Data Visualisations
-top10_GNI=df1_2015['GNI (current US$)'].sort_values(ascending=False)[0:10]
+top10_GNI=df1_2018['GNI (current US$)'].sort_values(ascending=False)[0:10]
+top10_Elec=df1_2018['Life expectancy at birth, total (years)'].sort_values(ascending=False)[0:10]
 plt.figure(figsize=(15,5))
 plt.plot(top10_GNI.index,top10_GNI.values)
+plt.plot(top10_Elec.index,top10_Elec.values)
 plt.title('Top 10 GNI Countries')
 plt.show()
 
